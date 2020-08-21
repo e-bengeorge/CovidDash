@@ -84,5 +84,4 @@ option = st.selectbox(
 
 'You selected: ', option
 
-status_text.text('Done!')
-st.balloons()
+
