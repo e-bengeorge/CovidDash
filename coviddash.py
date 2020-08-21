@@ -8,36 +8,33 @@ Created on Mon Aug 17 13:29:38 2020
 import streamlit as st
 import altair as alt
 import pandas as pd 
-import numpy as np
 
-# py lib for 3D map viz from uber
+
 
 st.cache(persist=True)
 def load_data():
     covid=pd.read_csv("data.csv")
     covid["Date"]=pd.to_datetime(covid["Date"],format="%d-%m-%Y")
-    top5 = ["US","Brazil","India","Russia","South Africa"]
-    top = covid[covid["Country"].isin(top5)]
-    return covid, top
-covid,top = load_data()
+    return covid
+covid= load_data()
 
 st.title('Covid-19 Dashborad')
+"Scroll the mouse over the Charts to feel the interactiveness of the Charts"
+"The data considerd for this analysis is from 01-02-2020 to 31-07-2020"
 
-#cty = st.selectbox("Select country",covid["Country"])
+
 cty = st.selectbox("Select country",covid["Country"][:186])
-#top = top[top["Country"]==cty]
-#n= st.number_input("Num")
-death= alt.Chart(covid[covid["Country"]==cty]).mark_circle().encode(
+
+death= alt.Chart(covid[covid["Country"]==cty]).mark_circle(color='green').encode(
     x="Date",
-    y="New deaths",
+    y="New cases",
     tooltip=["Date","Country","New deaths"]
 ).interactive()
 
-st.header(f"View scatter plot for {cty}")
+st.header(f"View Daily Cases for {cty}")
 
 st.altair_chart(death)
-st.balloons()
-# Find the details of death
+
 a= alt.Chart(covid[covid["Country"]==cty],width=500,height=400).mark_bar().encode(
     x="day(Date):O",
     y="month(Date):O",
@@ -48,17 +45,71 @@ a= alt.Chart(covid[covid["Country"]==cty],width=500,height=400).mark_bar().encod
 b=alt.Chart(covid[covid["Country"]==cty],width=500,height=400).mark_text().encode(
     x="day(Date):O",
     y="month(Date):O",
-    #color="sum(New deaths)",
-    text="sum(New deaths)"
-   
+    text="sum(New deaths)" 
 )
 
-st.header(f"View deaths for {cty}")
+c= alt.Chart(covid[covid["Country"]==cty],width=500,height=100).mark_bar().encode(
+    x="day(Date):O",
+   # y="month(Date):O",
+    color="sum(New deaths)",
+    tooltip="sum(New deaths)"
+)
 
-st.altair_chart(a+b)
+d=alt.Chart(covid[covid["Country"]==cty],width=500,height=100).mark_text().encode(
+    x="day(Date):O",
+    #y="month(Date):O",
+    text="sum(New deaths)" 
+)
+st.header(f"View deaths for {cty} by Day/Month")
 
-st.header(f"Daily new cases for top countries")
-fire=alt.Chart(top,width=500,height=300).mark_circle().encode(
+op = st.radio(
+     "Select the option",
+     ('Day and Month', 'Day'))
+
+if op == 'Day and Month':
+     st.altair_chart(a+b)
+else:
+     st.altair_chart(c+d)
+tot = covid[covid["Country"]==cty]['New deaths'].sum()
+
+st.subheader(f"Total Deaths for {cty} = {tot}")
+
+st.header(f"View Total Confirmed vs Total Recovered for {cty}")
+
+con=alt.Chart(covid[covid["Country"]==cty]).mark_area(color="purple").encode(
+    x="Date",
+    y="Confirmed",
+    tooltip=["Date","Confirmed"]
+    
+).interactive()
+
+rec=alt.Chart(covid[covid["Country"]==cty]).mark_area(color="green").encode(
+    x="Date",
+    y="Recovered",
+    tooltip=["Date","Recovered"]
+    
+).interactive()
+
+opt = st.radio(
+     "Select the option",
+     ('Confirmed', 'Recovered','Confirmed and Recovered'))
+
+if opt == 'Confirmed':
+     st.altair_chart(con)
+elif opt == 'Recovered':
+    st.altair_chart(rec)
+else:
+     st.altair_chart(con+rec)
+
+st.header(f"Daily New Cases and Total Cases for Selected Countries")
+
+options = st.multiselect(
+        'Select Multiple Countries',
+        covid["Country"][:186])
+ 
+
+
+fire=alt.Chart(covid[covid["Country"].isin(options)],width=500,height=300).mark_circle().encode(
     x="Date",
     y="Country",
     tooltip=["Date","Country","New cases"],
@@ -66,22 +117,23 @@ fire=alt.Chart(top,width=500,height=300).mark_circle().encode(
     size="New cases"
 ).interactive()
 
-st.altair_chart(fire)
+bar1 = alt.Chart(covid[covid["Country"].isin(options)]).mark_bar().encode(
+    y="sum(New cases)",
+    x=alt.X("Country",sort="-y"),
+    color="Country",
+    tooltip = "sum(New cases)"
+).interactive()
 
-st.header(f"View the Dataset")
-nc = st.slider("Month",2,7)
-covid = covid[covid["Date"].dt.month ==nc]
-"data", covid
+st.altair_chart(fire | bar1)
 
-"## Map Data"
-if st.checkbox('Show dataframe'):
-    st.line_chart(covid["Confirmed"])
+if st.checkbox("Click to View the Dataset",False):
+    "Select the Month from Slider"
+    nc = st.slider("Month",2,7,2,1)
+    covid = covid[covid["Date"].dt.month ==nc]
+    "data", covid
     
-"## selectbox"
-option = st.selectbox(
-    'Which number do you like best?',
-    covid['Date'][:186])
-
-'You selected: ', option
 
 
+
+
+    
