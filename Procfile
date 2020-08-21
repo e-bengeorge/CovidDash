@@ -1,1 +1,1 @@
-web: streamlit run "coviddash.py" 
+web: streamlit run coviddash.py
