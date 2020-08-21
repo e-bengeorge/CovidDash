@@ -1,1 +1,1 @@
-web: streamlit run coviddash.py
+web: sh setup.sh && streamlit run coviddash.py
