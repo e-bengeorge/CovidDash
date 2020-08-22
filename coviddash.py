@@ -15,14 +15,27 @@ st.cache(persist=True)
 def load_data():
     covid=pd.read_csv("data.csv")
     covid["Date"]=pd.to_datetime(covid["Date"],format="%d-%m-%Y")
-    return covid
-covid= load_data()
+    latest=covid[covid["Date"] == "2020-07-31"]
+    return covid,latest
+covid,latest= load_data()
 
 st.title('Covid-19 Dashborad')
-"Scroll the mouse over the Charts to feel the interactiveness of the Charts"
-"The data considerd for this analysis is from 01-02-2020 to 31-07-2020"
 
+st.sidebar.markdown(''' 
+The main aim of this app is to give insights about Covid-19 Infections around the world.
 
+The data considerd for this analysis is from 01-02-2020 to 31-07-2020
+
+Select the different options to vary the Visualization
+
+All the Charts are interactive. 
+
+Scroll the mouse over the Charts to feel the interactiveness like Tool tip, Zoom, Pan
+                    
+
+Designed by: 
+**Ben George**  ''')  
+    
 cty = st.selectbox("Select country",covid["Country"][:186])
 
 death= alt.Chart(covid[covid["Country"]==cty]).mark_circle(color='green').encode(
@@ -125,15 +138,94 @@ bar1 = alt.Chart(covid[covid["Country"].isin(options)]).mark_bar().encode(
 ).interactive()
 
 st.altair_chart(fire | bar1)
+  
 
+confirm = latest.sort_values("Confirmed",ascending=False)[["Country","Confirmed"]].head()
+
+confirm.reset_index(inplace = True,drop = True)
+
+bar2 = alt.Chart(confirm).mark_bar().encode(
+    x="Confirmed",
+    y=alt.Y("Country",sort="-x"),
+    color=alt.Color("Country",legend=None),
+    tooltip = "Confirmed"
+).interactive()
+
+
+death = latest.sort_values("Deaths",ascending=False)[["Country","Deaths"]].head()
+
+death.reset_index(inplace = True,drop = True)
+
+bar3 = alt.Chart(death).mark_bar().encode(
+    x="Deaths",
+    y=alt.Y("Country",sort="-x"),
+    color=alt.Color("Country",legend=None),
+    tooltip = "Deaths"
+).interactive()
+
+
+
+deathper=latest["Deaths"] / latest["Confirmed"] * 100
+lat = latest.copy()
+lat["Death Percentage"] = deathper
+deathp = lat.sort_values("Death Percentage",ascending=False)[["Country","Death Percentage"]].head()
+
+deathp.reset_index(inplace = True,drop = True)
+
+bar4 = alt.Chart(deathp).mark_bar().encode(
+    x="Death Percentage",
+    y=alt.Y("Country",sort="-x"),
+    color=alt.Color("Country",legend=None),
+    tooltip = "Death Percentage"
+).interactive()
+
+
+recover = latest.sort_values("Recovered",ascending=False)[["Country","Recovered"]].head()
+
+recover.reset_index(inplace = True,drop = True)
+
+bar5 = alt.Chart(recover).mark_bar().encode(
+    x="Recovered",
+    y=alt.Y("Country",sort="-x"),
+    color=alt.Color("Country",legend=None),
+    tooltip = "Recovered"
+).interactive()
+
+
+recper=latest["Recovered"] / latest["Confirmed"] * 100
+lat = latest.copy()
+lat["Recovered Percentage"] = recper
+recp = lat.sort_values("Recovered Percentage",ascending=False)[["Country","Recovered Percentage"]].head()
+
+recp.reset_index(inplace = True,drop = True)
+
+bar6 = alt.Chart(recp).mark_bar().encode(
+    x="Recovered Percentage",
+    y=alt.Y("Country",sort="-x"),
+    color=alt.Color("Country",legend=None),
+    tooltip = "Recovered Percentage"
+).interactive()
+
+
+st.header(f"Do you want to know the Top 5 countries")
+top = st.selectbox("Select your option",["Confirmed Cases","Deaths","Death Percentage","Recovered","Recovered Percentage"])
+if top == "Confirmed Cases":
+    st.altair_chart(bar2)
+elif top == "Deaths":
+    st.altair_chart(bar3)
+elif top == "Death Percentage":
+    st.altair_chart(bar4)
+elif top == "Recovered":
+    st.altair_chart(bar5)
+else:
+    st.altair_chart(bar6)
+    
 if st.checkbox("Click to View the Dataset",False):
     "Select the Month from Slider"
     nc = st.slider("Month",2,7,2,1)
     covid = covid[covid["Date"].dt.month ==nc]
     "data", covid
-    
-
-
 
 
     
+
