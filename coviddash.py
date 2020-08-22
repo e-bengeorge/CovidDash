@@ -19,18 +19,20 @@ def load_data():
     return covid,latest
 covid,latest= load_data()
 
-st.title('Covid-19 Dashborad')
 
+
+st.title('🦠 Covid-19 Dashborad 🦠 ')
+st.sidebar.markdown('🦠 **Covid-19 Dashborad** 🦠 ')
 st.sidebar.markdown(''' 
-The main aim of this app is to give insights about Covid-19 Infections around the world.
+This app is to give insights about Covid-19 Infections around the world.
 
-The data considerd for this analysis is from 01-02-2020 to 31-07-2020
+The data considerd for this analysis for 6 Months starting from 01-02-2020 to 31-07-2020
 
 Select the different options to vary the Visualization
 
 All the Charts are interactive. 
 
-Scroll the mouse over the Charts to feel the interactiveness like Tool tip, Zoom, Pan
+Scroll the mouse over the Charts to feel the interactive features like Tool tip, Zoom, Pan
                     
 
 Designed by: 
@@ -38,15 +40,25 @@ Designed by:
     
 cty = st.selectbox("Select country",covid["Country"][:186])
 
-death= alt.Chart(covid[covid["Country"]==cty]).mark_circle(color='green').encode(
+cas= alt.Chart(covid[covid["Country"]==cty],title="Scatter Chart").mark_circle(color='green').encode(
     x="Date",
     y="New cases",
-    tooltip=["Date","Country","New deaths"]
+    size="New deaths",
+    color="New recovered",
+    tooltip=["Date","Country","New cases","New deaths","New recovered"]
 ).interactive()
 
-st.header(f"View Daily Cases for {cty}")
+lin= alt.Chart(covid[covid["Country"]==cty],title="Line Chart").mark_line(color='firebrick').encode(
+    x="Date",
+    y="New cases",
+    tooltip=["Date","Country","New cases"]
+).interactive()
 
-st.altair_chart(death)
+
+st.header(f"View Daily Cases for {cty}")
+"In Scatter Chart, Circle represent daily new cases, size of the circle shows the daily deaths and the color variation shows the daily recoveries"
+
+st.altair_chart(lin | cas)
 
 a= alt.Chart(covid[covid["Country"]==cty],width=500,height=400).mark_bar().encode(
     x="day(Date):O",
@@ -116,10 +128,10 @@ else:
 
 st.header(f"Daily New Cases and Total Cases for Selected Countries")
 
+
 options = st.multiselect(
-        'Select Multiple Countries',
-        covid["Country"][:186])
- 
+    'Select Multiple Countries',
+     covid["Country"][:186])
 
 
 fire=alt.Chart(covid[covid["Country"].isin(options)],width=500,height=300).mark_circle().encode(
@@ -138,7 +150,17 @@ bar1 = alt.Chart(covid[covid["Country"].isin(options)]).mark_bar().encode(
 ).interactive()
 
 st.altair_chart(fire | bar1)
-  
+
+texchart=alt.Chart(covid[covid["Country"].isin(options)]).mark_text().encode(
+    x=alt.X('sum(New cases)',axis=None),
+    y=alt.Y("Country",axis=None),
+    size=alt.Size("sum(New cases)",scale=alt.Scale(range=[10, 200]),legend=None),
+    text="Country",
+    color=alt.Color("Country",legend=None),
+    tooltip=["Country","sum(New cases)"]
+).configure_view(strokeWidth=0).configure_axis(grid=False, domain=False)
+st.markdown("### World Cloud representing total confirmed cases for the selected countries")
+st.altair_chart(texchart)
 
 confirm = latest.sort_values("Confirmed",ascending=False)[["Country","Confirmed"]].head()
 
@@ -205,6 +227,8 @@ bar6 = alt.Chart(recp).mark_bar().encode(
     color=alt.Color("Country",legend=None),
     tooltip = "Recovered Percentage"
 ).interactive()
+
+
 
 
 st.header(f"Do you want to know the Top 5 countries")
