@@ -48,17 +48,19 @@ cas= alt.Chart(covid[covid["Country"]==cty],title="Scatter Chart").mark_circle(c
     tooltip=["Date","Country","New cases","New deaths","New recovered"]
 ).interactive()
 
-lin= alt.Chart(covid[covid["Country"]==cty],title="Line Chart").mark_line(color='firebrick').encode(
+lin1= alt.Chart(covid[covid["Country"]==cty],title="Line Chart").mark_line(color='firebrick').encode(
     x="Date",
     y="New cases",
     tooltip=["Date","Country","New cases"]
 ).interactive()
 
 
+
+
 st.header(f"View Daily Cases for {cty}")
 "In Scatter Chart, Circle represent daily new cases, size of the circle shows the daily deaths and the color variation shows the daily recoveries"
 
-st.altair_chart(lin | cas)
+st.altair_chart(cas & lin1)
 
 a= alt.Chart(covid[covid["Country"]==cty],width=500,height=400).mark_bar().encode(
     x="day(Date):O",
@@ -85,19 +87,49 @@ d=alt.Chart(covid[covid["Country"]==cty],width=500,height=100).mark_text().encod
     #y="month(Date):O",
     text="sum(New deaths)" 
 )
-st.header(f"View deaths for {cty} by Day/Month")
+st.header(f"View deaths for {cty} by Month/Day/Date")
+
+e= alt.Chart(covid[covid["Country"]==cty],width=900,height=300).mark_bar().encode(
+    x="date(Date):O",
+    y="month(Date):O",
+    color="sum(New deaths)",
+    tooltip="sum(New deaths)"
+)
+
+f=alt.Chart(covid[covid["Country"]==cty],width=900,height=300).mark_text(angle=270).encode(
+    x="date(Date):O",
+    y="month(Date):O",
+    text="sum(New deaths)" 
+)
+
+g= alt.Chart(covid[covid["Country"]==cty],width=900,height=100).mark_bar().encode(
+    x="date(Date):O",
+   # y="month(Date):O",
+    color="sum(New deaths)",
+    tooltip="sum(New deaths)"
+)
+
+h=alt.Chart(covid[covid["Country"]==cty],width=900,height=100).mark_text(angle=270).encode(
+    x="date(Date):O",
+    #y="month(Date):O",
+    text="sum(New deaths)" 
+)
+
 
 op = st.radio(
      "Select the option",
-     ('Day and Month', 'Day'))
+     ('Day and Month', 'Day','Date and Month','Date'))
 
 if op == 'Day and Month':
      st.altair_chart(a+b)
-else:
-     st.altair_chart(c+d)
-tot = covid[covid["Country"]==cty]['New deaths'].sum()
+elif op == 'Day':
+    st.altair_chart(c+d)
+elif op == 'Date and Month':
+    st.altair_chart(e+f)
+elif op == 'Date':
+    st.altair_chart(g+h)
 
-st.subheader(f"Total Deaths for {cty} = {tot}")
+
 
 st.header(f"View Total Confirmed vs Total Recovered for {cty}")
 
@@ -126,6 +158,38 @@ elif opt == 'Recovered':
 else:
      st.altair_chart(con+rec)
 
+
+st.header(f"Summary of Covid-19 infections for {cty}")
+"From 01-02-2020 to 31-07-2020"
+tot = latest[latest["Country"]==cty]['Confirmed'].sum()
+
+#st.subheader(f"Total Confirmed cases in {cty} = {tot}")
+
+reco = latest[latest["Country"]==cty]['Recovered'].sum()
+
+#st.subheader(f"Total Recovered in {cty} = {reco}")
+
+act = latest[latest["Country"]==cty]['Active'].sum()
+
+#st.subheader(f"Total Active cases in {cty} = {act}")
+
+dths = latest[latest["Country"]==cty]['Deaths'].sum()
+
+#st.subheader(f"Total Deaths occured in {cty} = {dths}")
+infsing = covid[covid["Country"]==cty]['New cases'].max()
+
+deasing = covid[covid["Country"]==cty]['New deaths'].max()
+
+recsing = covid[covid["Country"]==cty]['New recovered'].max()
+
+tab = {"Category":["Total Confirmed Cases","Total Recovered","Total Active Cases","Total Deaths","Maximum Cases on a Single Day","Maximum Deaths on a Single Day","Maximum Recoveries on a Single Day"],
+       "Total Count":[tot,reco,act,dths,infsing,deasing,recsing]}
+
+stat = pd.DataFrame(tab)
+st.table(stat)
+
+
+
 st.header(f"Daily New Cases and Total Cases for Selected Countries")
 
 
@@ -151,10 +215,10 @@ bar1 = alt.Chart(covid[covid["Country"].isin(options)]).mark_bar().encode(
 
 st.altair_chart(fire | bar1)
 
-texchart=alt.Chart(covid[covid["Country"].isin(options)]).mark_text().encode(
+texchart=alt.Chart(covid[covid["Country"].isin(options)],width=800,height=400).mark_text().encode(
     x=alt.X('sum(New cases)',axis=None),
     y=alt.Y("Country",axis=None),
-    size=alt.Size("sum(New cases)",scale=alt.Scale(range=[10, 200]),legend=None),
+    size=alt.Size("sum(New cases)",scale=alt.Scale(range=[10, 150]),legend=None),
     text="Country",
     color=alt.Color("Country",legend=None),
     tooltip=["Country","sum(New cases)"]
@@ -244,6 +308,9 @@ elif top == "Recovered":
 else:
     st.altair_chart(bar6)
     
+
+
+
 if st.checkbox("Click to View the Dataset",False):
     "Select the Month from Slider"
     nc = st.slider("Month",2,7,2,1)
